@@ -51,6 +51,17 @@ class Minesweeper:
         opt = tk.OptionMenu(btns, self.level_var, *[n for n, _ in levels], command=self._change_level)
         opt.pack(side="right")
 
+        props = tk.Frame(self.root)
+        props.pack(padx=10, pady=(0, 10), fill="x")
+        tk.Label(props, text="道具：").pack(side="left")
+        self.prop_buttons = {
+            "safe": tk.Button(props, text="安全翻开 x0", command=self._use_safe_reveal),
+            "flag": tk.Button(props, text="自动插旗 x0", command=self._use_auto_flag),
+            "area": tk.Button(props, text="清除一片 x0", command=self._use_area_reveal),
+        }
+        for btn in self.prop_buttons.values():
+            btn.pack(side="left", padx=4)
+
         self.board_frame = tk.Frame(self.root, bd=2, relief="groove")
         self.board_frame.pack(padx=10, pady=10)
 
@@ -72,6 +83,9 @@ class Minesweeper:
         self.flags_var.set(f"🚩 {self.flags_left}")
         self.time_var.set("⏱ 0")
         self.info_var.set("左键翻开 / 右键插旗")
+
+        self.prop_counts = {"safe": 3, "flag": 2, "area": 2}
+        self._update_prop_buttons()
 
         # 清空旧棋盘
         for w in self.board_frame.winfo_children():
@@ -107,6 +121,101 @@ class Minesweeper:
             self.board_frame.grid_rowconfigure(r, weight=1)
         for c in range(self.cols):
             self.board_frame.grid_columnconfigure(c, weight=1)
+
+    def _update_prop_buttons(self):
+        labels = {
+            "safe": f"安全翻开 x{self.prop_counts['safe']}",
+            "flag": f"自动插旗 x{self.prop_counts['flag']}",
+            "area": f"清除一片 x{self.prop_counts['area']}",
+        }
+        for key, text in labels.items():
+            self.prop_buttons[key].config(text=text)
+
+    def _consume_prop(self, key):
+        if self.game_over:
+            return False
+        if self.prop_counts[key] <= 0:
+            messagebox.showinfo("道具不足", "该道具已用完。")
+            return False
+        self.prop_counts[key] -= 1
+        self._update_prop_buttons()
+        return True
+
+    def _ensure_mines_for_prop(self, safe_cell=None):
+        if self.first_click:
+            if safe_cell is None:
+                safe_cell = (random.randrange(self.rows), random.randrange(self.cols))
+            self.first_click = False
+            self._place_mines(*safe_cell)
+            self._start_timer()
+
+    def _use_safe_reveal(self):
+        if not self._consume_prop("safe"):
+            return
+        if self.first_click:
+            candidates = [(r, c) for r in range(self.rows) for c in range(self.cols)]
+            safe_cell = random.choice(candidates)
+            self._ensure_mines_for_prop(safe_cell)
+        candidates = [
+            (r, c)
+            for r in range(self.rows)
+            for c in range(self.cols)
+            if self.grid[r][c] != -1 and not self.revealed[r][c] and not self.flagged[r][c]
+        ]
+        if not candidates:
+            self.info_var.set("没有可翻开的安全格了。")
+            return
+        r, c = random.choice(candidates)
+        self._reveal_cell(r, c)
+        self.info_var.set("✨ 已翻开一个安全格。")
+        self._check_win()
+
+    def _use_auto_flag(self):
+        if not self._consume_prop("flag"):
+            return
+        self._ensure_mines_for_prop()
+        if self.flags_left <= 0:
+            self.info_var.set("没有可用旗子了。")
+            return
+        candidates = [
+            (r, c)
+            for r in range(self.rows)
+            for c in range(self.cols)
+            if self.grid[r][c] == -1 and not self.flagged[r][c]
+        ]
+        if not candidates:
+            self.info_var.set("没有可自动插旗的位置。")
+            return
+        r, c = random.choice(candidates)
+        self.flagged[r][c] = True
+        self.flags_left -= 1
+        self.buttons[r][c].config(text="🚩", fg="red")
+        self.flags_var.set(f"🚩 {self.flags_left}")
+        self.info_var.set("🧭 已自动插旗一个地雷。")
+        self._check_win()
+
+    def _use_area_reveal(self):
+        if not self._consume_prop("area"):
+            return
+        self._ensure_mines_for_prop()
+        candidates = [
+            (r, c)
+            for r in range(self.rows)
+            for c in range(self.cols)
+            if self.grid[r][c] == 0 and not self.revealed[r][c]
+        ]
+        if not candidates:
+            self.info_var.set("没有可清除的安全区域，改为翻开一格。")
+            self._use_safe_reveal()
+            return
+        r, c = random.choice(candidates)
+        for dr in (-1, 0, 1):
+            for dc in (-1, 0, 1):
+                rr, cc = r + dr, c + dc
+                if 0 <= rr < self.rows and 0 <= cc < self.cols:
+                    self._reveal_cell(rr, cc)
+        self.info_var.set("🧹 已清除一片安全区域。")
+        self._check_win()
 
     def _start_timer(self):
         self.start_time = time.time()
