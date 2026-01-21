@@ -2,8 +2,10 @@
 ##安装docker-配置本地dify-下载ollama-ollma内配置Qwen
 
 教学[https://blog.csdn.net/zohan134/article/details/149301536?utm_source=chatgpt.com]
+dify功能教学[https://docs.dify.ai/zh/use-dify/getting-started/quick-start]
 
 你的电脑
+
 ┌──────────────────────────────────────────┐
 
 │ Docker （容器管理）                       │
@@ -19,13 +21,8 @@
 └──────────────────────────────────────────┘
 
         │
-        
         └─ Dify 通过 HTTP 请求调用
-        
               ↓
-              
      Ollama 本地模型推理服务（非 Docker）
-     
         │
-        
         └─ Qwen3 模型被 Ollama 加载与调用
