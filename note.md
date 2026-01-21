@@ -2,6 +2,7 @@
 ##安装docker-配置本地dify-下载ollama-ollma内配置Qwen
 
 教学[https://blog.csdn.net/zohan134/article/details/149301536?utm_source=chatgpt.com]
+
 dify功能教学[https://docs.dify.ai/zh/use-dify/getting-started/quick-start]
 
 你的电脑
