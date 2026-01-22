@@ -5,7 +5,15 @@
 
 dify功能教学[https://docs.dify.ai/zh/use-dify/getting-started/quick-start]
 
-你的电脑
+👉 当你把 知识检索 + LLM 组合起来时：
+
+✔️ 知识检索模块会把相关文本检索出来
+
+✔️ Dify 会 自动把这些检索结果拼接到 LLM 的上下文里
+
+✔️ 你在 System / Prompt 中不需要也看不到直接的 result 变量名
+
+✔️ 但这些检索出的文本内容确实会“隐式”地被加入到 LLM 的输入里
 
 ┌──────────────────────────────────────────┐
 
